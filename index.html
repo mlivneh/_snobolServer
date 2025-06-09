@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SNOBOL4 Runner</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
+        textarea { width: 80%; height: 200px; margin-bottom: 10px; font-family: monospace; }
+        button { padding: 10px 20px; cursor: pointer; }
+        pre { width: 80%; background-color: #f4f4f4; border: 1px solid #ccc; padding: 10px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>SNOBOL4 Online Runner</h1>
+    <textarea id="codeInput" placeholder="Enter SNOBOL4 code here...">
+    OUTPUT = 'Hello from SNOBOL4!'
+END
+    </textarea>
+    <button id="runButton">Run Code</button>
+    <h2>Output:</h2>
+    <pre id="outputArea">Waiting for execution...</pre>
+
+    <script>
+        const runButton = document.getElementById('runButton');
+        const codeInput = document.getElementById('codeInput');
+        const outputArea = document.getElementById('outputArea');
+
+        runButton.addEventListener('click', async () => {
+            const code = codeInput.value;
+            outputArea.textContent = 'Running...';
+
+            try {
+                const response = await fetch('/run-snobol', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ code: code })
+                });
+
+                const result = await response.json();
+
+                if (result.error) {
+                    outputArea.textContent = 'Error:\n' + result.error;
+                } else {
+                    outputArea.textContent = result.output;
+                }
+            } catch (err) {
+                outputArea.textContent = 'Failed to connect to the server. Is it running?';
+            }
+        });
+    </script>
+</body>
+</html>
