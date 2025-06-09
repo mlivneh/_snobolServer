@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNOBOL4 Text Replacer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(15px);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-style: italic;
+            font-size: 1.1em;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .info-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.3em;
+        }
+
+        .example {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 1.1em;
+        }
+
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        textarea {
+            min-height: 120px;
+            font-family: 'Courier New', monospace;
+            resize: vertical;
+        }
+
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            width: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 6px solid #667eea;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 6px solid #28a745;
+            margin-bottom: 20px;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 6px solid #dc3545;
+            margin-top: 20px;
+        }
+
+        .result-text {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            line-height: 1.5;
+            border: 2px solid #28a745;
+            white-space: pre-wrap;
+        }
+
+        .before-after {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .before, .after {
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .before {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+
+        .after {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+        }
+
+        @media (max-width: 768px) {
+            .before-after {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 SNOBOL4 Text Replacer</h1>
+        <p class="subtitle">Replace words in text using the classic SNOBOL4 pattern matching language!</p>
+        
+        <div class="info-card">
+            <h3>🎯 How it works:</h3>
+            <p>Enter two words and some text. SNOBOL4 will replace every occurrence of the first word with the second word!</p>
+            <div class="example">
+<strong>Example:</strong>
+Word to replace: "cat"
+Replace with: "dog"  
+Text: "The cat sat on the cat's mat"
+Result: "The dog sat on the dog's mat"
+            </div>
+        </div>
+
+        <form id="replaceForm">
+            <div class="form-group">
+                <label for="oldWord">🔍 Word to replace:</label>
+                <input 
+                    type="text" 
+                    id="oldWord" 
+                    placeholder="cat"
+                    value="cat"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="newWord">✨ Replace with:</label>
+                <input 
+                    type="text" 
+                    id="newWord" 
+                    placeholder="dog"
+                    value="dog"
+                    required
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="textInput">📝 Text to process:</label>
+                <textarea 
+                    id="textInput" 
+                    placeholder="The cat sat on the cat's mat"
+                    required
+                >The cat sat on the cat's mat. The cat was happy.</textarea>
+            </div>
+
+            <button type="submit" id="replaceBtn">
+                🚀 Replace with SNOBOL4
+            </button>
+        </form>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Create SNOBOL4 code for replacement
+        function createReplaceCode(oldWord, newWord) {
+            return `READ    LINE = INPUT :F(END)
+        LINE '${oldWord}' = '${newWord}' :S(READ)
+        OUTPUT = LINE
+        :(read)
+END`;
+        }
+
+        // Execute SNOBOL4
+        async function runSnobol(code, textContent) {
+            const response = await fetch('https://snobolserver.onrender.com/run-snobol', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    code: code, 
+                    htmlContent: textContent
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+            
+            return await response.json();
+        }
+
+        // Main replacement function
+        async function replaceText() {
+            const oldWord = document.getElementById('oldWord').value.trim();
+            const newWord = document.getElementById('newWord').value.trim();
+            const textInput = document.getElementById('textInput').value.trim();
+            const resultsDiv = document.getElementById('results');
+            const replaceBtn = document.getElementById('replaceBtn');
+            
+            if (!oldWord || !newWord || !textInput) {
+                alert('Please fill in all fields!');
+                return;
+            }
+
+            replaceBtn.disabled = true;
+            
+            resultsDiv.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>🔄 Running SNOBOL4 text replacement...</p>
+                </div>
+            `;
+
+            try {
+                // Escape single quotes in inputs for SNOBOL4
+                const cleanOldWord = oldWord.replace(/'/g, "''");
+                const cleanNewWord = newWord.replace(/'/g, "''");
+                const cleanText = textInput.replace(/'/g, "''");
+                
+                // Create SNOBOL4 code with the text included
+                const snobolCode = createReplaceCode(cleanOldWord, cleanNewWord, cleanText);
+                
+                // Run SNOBOL4 (no need to send text separately)
+                const result = await runSnobol(snobolCode, '');
+                
+                if (result.error) {
+                    throw new Error(`SNOBOL4 error: ${result.error}`);
+                }
+
+                // Process output
+                let outputText = result.output || '';
+                
+                // Clean up output (remove extra newlines)
+                outputText = outputText.trim();
+                
+                // Count replacements
+                const originalCount = (textInput.match(new RegExp(oldWord, 'g')) || []).length;
+                const newCount = (outputText.match(new RegExp(newWord, 'g')) || []).length;
+                const replacements = Math.min(originalCount, newCount);
+
+                if (outputText) {
+                    resultsDiv.innerHTML = `
+                        <div class="success">
+                            ✅ SNOBOL4 replacement completed! Made ${replacements} replacement(s).
+                        </div>
+                        
+                        <div class="before-after">
+                            <div class="before">
+                                <strong>📄 Before:</strong><br>
+                                ${textInput}
+                            </div>
+                            <div class="after">
+                                <strong>✨ After:</strong><br>
+                                ${outputText}
+                            </div>
+                        </div>
+                        
+                        <div class="result-text">
+                            ${outputText}
+                        </div>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="error">
+                            ❌ No output received from SNOBOL4. The word "${oldWord}" might not be found in the text.
+                        </div>
+                    `;
+                }
+
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        ❌ Error: ${error.message}
+                        <br><br>
+                        <strong>Debug info:</strong><br>
+                        Server: https://snobolserver.onrender.com<br>
+                        Make sure the SNOBOL4 server is running and accessible.
+                    </div>
+                `;
+            } finally {
+                replaceBtn.disabled = false;
+            }
+        }
+
+        // Event listeners
+        document.getElementById('replaceForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            replaceText();
+        });
+
+        // Real-time preview
+        document.getElementById('oldWord').addEventListener('input', updatePreview);
+        document.getElementById('newWord').addEventListener('input', updatePreview);
+        document.getElementById('textInput').addEventListener('input', updatePreview);
+
+        function updatePreview() {
+            // Optional: Could add live preview here
+        }
+    </script>
+</body>
+</html>

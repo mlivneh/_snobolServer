@@ -1,4 +1,11 @@
 # SNOBOL4 Web Service Wrapper
+## Built on CSNOBOL4
+
+This project uses **CSNOBOL4** by Phil Budne.
+Full details in [ACKNOWLEDGMENTS.md](ACKNOWLEDGMENTS.md)
+
+- Website: http://www.snobol4.com/
+- License: BSD-style
 
 **Making the classic SNOBOL4 programming language accessible through modern web browsers**
 

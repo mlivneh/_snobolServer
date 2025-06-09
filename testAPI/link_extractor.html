@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SNOBOL4 Email Dual Finder</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 50%, #45b7d1 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            backdrop-filter: blur(15px);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-style: italic;
+            font-size: 1.1em;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .info-card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.3em;
+        }
+
+        .example {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #555;
+            font-size: 1.1em;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 200px;
+            padding: 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+            resize: vertical;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #ff6b6b;
+            box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+        }
+
+        button {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            width: 100%;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(255, 107, 107, 0.4);
+        }
+
+        button:active {
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-radius: 15px;
+            border-left: 6px solid #ff6b6b;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            color: #666;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #ff6b6b;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 6px solid #28a745;
+            margin-bottom: 20px;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 6px solid #dc3545;
+            margin-top: 20px;
+        }
+
+        .dual-person {
+            background: white;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 12px;
+            border-left: 5px solid #28a745;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .dual-person:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .person-name {
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #ff6b6b;
+            margin-bottom: 8px;
+        }
+
+        .email-list {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .email-badge {
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+        }
+
+        .gmail-badge {
+            background: #ea4335;
+            color: white;
+        }
+
+        .yahoo-badge {
+            background: #6001d1;
+            color: white;
+        }
+
+        .step-indicator {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #4ecdc4;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Gmail & Yahoo Dual Finder</h1>
+        <p class="subtitle">Find people who have BOTH Gmail AND Yahoo accounts using SNOBOL4 pattern matching!</p>
+        
+        <div class="info-card">
+            <h3>🎯 How it works:</h3>
+            <p>Enter a list of email addresses (one per line) and watch SNOBOL4 find people who appear with both @gmail.com AND @yahoo.com addresses!</p>
+            <div class="example">
+<strong>Example input:</strong>
+john@gmail.com
+john@yahoo.com
+mary@gmail.com
+bob@yahoo.com
+alice@gmail.com
+alice@yahoo.com
+
+<strong>Result:</strong> ✅ john and alice have both Gmail & Yahoo!
+            </div>
+        </div>
+
+        <form id="analyzeForm">
+            <div class="form-group">
+                <label for="emailInput">📧 Email List (one per line):</label>
+                <textarea 
+                    id="emailInput" 
+                    placeholder="john@gmail.com&#10;john@yahoo.com&#10;mary@gmail.com&#10;bob@yahoo.com&#10;alice@gmail.com&#10;alice@yahoo.com&#10;alice@hotmail.com"
+                    required
+                >john@gmail.com
+john@yahoo.com
+mary@gmail.com
+bob@yahoo.com
+alice@gmail.com
+alice@yahoo.com
+alice@hotmail.com</textarea>
+            </div>
+            <button type="submit" id="analyzeBtn">
+                🚀 Find Dual Email Users with SNOBOL4
+            </button>
+        </form>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        // Sanitize email for SNOBOL4
+        function sanitizeForSnobol(text) {
+            return text
+                .replace(/@/g, 'AT')
+                .replace(/\./g, 'DOT')
+                .replace(/[^\w\sAT]/g, '');
+        }
+
+        // Restore email from SNOBOL4
+        function restoreFromSnobol(text) {
+            return text
+                .replace(/AT/g, '@')
+                .replace(/DOT/g, '.');
+        }
+
+        // Create SNOBOL4 code to find Gmail addresses
+        function createGmailSnobolCode() {
+            return `READ    LINE = INPUT :F(END)
+        LINE 'ATgmailDOTcom' = '' :F(READ)
+        OUTPUT = 'GMAIL:' LINE
+        :(READ)
+END`;
+        }
+
+        // Create SNOBOL4 code to find Yahoo addresses  
+        function createYahooSnobolCode() {
+            return `        INPUT(.INPUT,1,"emails.txt")
+        
+READ    INPUT LINE :F(END)
+        LINE 'ATyahooDOTcom' = '' :F(READ)
+        OUTPUT = "YAHOO:" LINE
+        :(READ)
+        
+END`;
+        }
+
+        // Execute SNOBOL4
+        async function runSnobol(code, emailContent) {
+            const response = await fetch('https://snobolserver.onrender.com/run-snobol', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    code: code, 
+                    htmlContent: emailContent
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error(`Server error: ${response.status}`);
+            }
+            
+            return await response.json();
+        }
+
+        // Parse SNOBOL4 results
+        function parseResults(output, type) {
+            const emails = [];
+            const lines = output.split('\n');
+            
+            for (const line of lines) {
+                const trimmed = line.trim();
+                if (trimmed.startsWith(`${type}:`)) {
+                    let email = trimmed.substring(type.length + 1);
+                    email = restoreFromSnobol(email);
+                    if (email && email.includes('@')) {
+                        emails.push(email);
+                    }
+                }
+            }
+            
+            return emails;
+        }
+
+        // Extract username from email
+        function getUsername(email) {
+            return email.split('@')[0].toLowerCase();
+        }
+
+        // Find people with both Gmail and Yahoo
+        function findDualUsers(gmailList, yahooList) {
+            const dualUsers = [];
+            
+            for (const gmail of gmailList) {
+                const gmailUser = getUsername(gmail);
+                
+                for (const yahoo of yahooList) {
+                    const yahooUser = getUsername(yahoo);
+                    
+                    if (gmailUser === yahooUser) {
+                        // Check if we already have this user
+                        let existingUser = dualUsers.find(user => user.username === gmailUser);
+                        
+                        if (!existingUser) {
+                            existingUser = {
+                                username: gmailUser,
+                                gmail: gmail,
+                                yahoo: yahoo
+                            };
+                            dualUsers.push(existingUser);
+                        }
+                    }
+                }
+            }
+            
+            return dualUsers;
+        }
+
+        // Main analysis function
+        async function analyzeEmails() {
+            const emailInput = document.getElementById('emailInput');
+            const resultsDiv = document.getElementById('results');
+            const analyzeBtn = document.getElementById('analyzeBtn');
+            
+            const emailText = emailInput.value.trim();
+            if (!emailText) return;
+
+            analyzeBtn.disabled = true;
+            
+            resultsDiv.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Preparing email list for SNOBOL4...</p>
+                </div>
+            `;
+
+            try {
+                // Sanitize emails for SNOBOL4
+                const sanitizedEmails = emailText
+                    .split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line.length > 0)
+                    .map(email => sanitizeForSnobol(email))
+                    .join('\n');
+
+                // Step 1: Find Gmail addresses
+                resultsDiv.innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <div class="step-indicator">
+                            📧 Step 1: Running SNOBOL4 to find Gmail addresses...
+                        </div>
+                    </div>
+                `;
+
+                const gmailCode = createGmailSnobolCode();
+                const gmailResult = await runSnobol(gmailCode, sanitizedEmails);
+                
+                if (gmailResult.error) {
+                    throw new Error(`Gmail SNOBOL4 error: ${gmailResult.error}`);
+                }
+
+                const gmailList = parseResults(gmailResult.output, 'GMAIL');
+
+                // Step 2: Find Yahoo addresses
+                resultsDiv.innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <div class="step-indicator">
+                            📧 Step 1: Found ${gmailList.length} Gmail addresses ✅
+                        </div>
+                        <div class="step-indicator">
+                            📧 Step 2: Running SNOBOL4 to find Yahoo addresses...
+                        </div>
+                    </div>
+                `;
+
+                const yahooCode = createYahooSnobolCode();
+                const yahooResult = await runSnobol(yahooCode, sanitizedEmails);
+                
+                if (yahooResult.error) {
+                    throw new Error(`Yahoo SNOBOL4 error: ${yahooResult.error}`);
+                }
+
+                const yahooList = parseResults(yahooResult.output, 'YAHOO');
+
+                // Step 3: Find overlaps
+                resultsDiv.innerHTML = `
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <div class="step-indicator">
+                            📧 Step 1: Found ${gmailList.length} Gmail addresses ✅
+                        </div>
+                        <div class="step-indicator">
+                            📧 Step 2: Found ${yahooList.length} Yahoo addresses ✅
+                        </div>
+                        <div class="step-indicator">
+                            🔍 Step 3: Finding people with BOTH accounts...
+                        </div>
+                    </div>
+                `;
+
+                const dualUsers = findDualUsers(gmailList, yahooList);
+
+                // Display results
+                if (dualUsers.length === 0) {
+                    resultsDiv.innerHTML = `
+                        <div class="error">
+                            ❌ No people found with both Gmail AND Yahoo accounts.
+                            <br><br>
+                            <strong>Found separately:</strong><br>
+                            📧 Gmail: ${gmailList.length} addresses<br>
+                            📧 Yahoo: ${yahooList.length} addresses
+                        </div>
+                    `;
+                } else {
+                    let resultsHtml = `
+                        <div class="success">
+                            🎉 Found ${dualUsers.length} people with BOTH Gmail AND Yahoo accounts!
+                            <br>
+                            📊 Total processed: Gmail(${gmailList.length}) + Yahoo(${yahooList.length})
+                        </div>
+                    `;
+                    
+                    for (const user of dualUsers) {
+                        resultsHtml += `
+                            <div class="dual-person">
+                                <div class="person-name">👤 ${user.username}</div>
+                                <div class="email-list">
+                                    <span class="email-badge gmail-badge">📧 ${user.gmail}</span>
+                                    <span class="email-badge yahoo-badge">📧 ${user.yahoo}</span>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    resultsDiv.innerHTML = resultsHtml;
+                }
+
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        ❌ Error: ${error.message}
+                        <br><br>
+                        Make sure the SNOBOL4 server is running at: 
+                        <code>https://snobolserver.onrender.com</code>
+                    </div>
+                `;
+            } finally {
+                analyzeBtn.disabled = false;
+            }
+        }
+
+        // Event listeners
+        document.getElementById('analyzeForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            analyzeEmails();
+        });
+    </script>
+</body>
+</html>
