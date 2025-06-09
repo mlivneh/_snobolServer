@@ -10,7 +10,7 @@ app.use(express.json());
 app.use(express.static('.'));
 
 // הנתיב לקובץ ההרצה של סנובול. ודא שהוא נמצא באותה תיקייה
-const snobolExecutable = path.join(__dirname, 'snobol4');
+const snobolExecutable = '/usr/local/bin/snobol4';
 
 // נקודת הקצה (Endpoint) שתקבל את הקוד להרצה
 app.post('/run-snobol', (req, res) => {

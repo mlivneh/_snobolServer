@@ -8,6 +8,7 @@ WORKDIR /usr/src/app
 RUN apt-get update && apt-get install -y build-essential m4 wget
 
 # הורד, חלץ וקמפל את SNOBOL4
+# שימו לב לתיקון בשורת ה-cp
 RUN wget https://ftp.regressive.org/snobol4/snobol4-2.3.3.tar.gz && \
     tar -xvf snobol4-2.3.3.tar.gz && \
     cd snobol4-2.3.3 && \
