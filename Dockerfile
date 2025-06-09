@@ -1,30 +1,33 @@
-# התחל מתמונת בסיס רשמית של Node.js, הכוללת מערכת הפעלה מלאה (דביאן)
+# SNOBOL4 Web Service - Dockerfile
+# This dockerfile compiles SNOBOL4 from source and creates a web service wrapper
+
 FROM node:20-bookworm
 
-# הגדר את ספריית העבודה בתוך הקונטיינר
+# Set working directory inside the container
 WORKDIR /usr/src/app
 
-# עדכן את מנהל החבילות והתקן את כל התלויות הדרושות לקומפילציה של סנובול
-RUN apt-get update && apt-get install -y build-essential m4 wget
-
-# הורד, חלץ וקמפל את SNOBOL4
-# שימו לב לתיקון בשורת ה-cp
-RUN wget https://ftp.regressive.org/snobol4/snobol4-2.3.3.tar.gz && \
+# Update package manager and install all dependencies needed for SNOBOL4 compilation
+RUN apt-get update && apt-get install -y build-essential m4 wget && \
+    # Download, extract and compile SNOBOL4 from source
+    wget https://ftp.regressive.org/snobol4/snobol4-2.3.3.tar.gz && \
     tar -xvf snobol4-2.3.3.tar.gz && \
     cd snobol4-2.3.3 && \
     ./configure && \
     make && \
-    cp snobol4 /usr/local/bin/snobol4
+    # Install SNOBOL4 binary to system path
+    cp snobol4 /usr/local/bin/snobol4 && \
+    # Clean up temporary files to reduce image size
+    cd .. && rm -rf snobol4-2.3.3*
 
-# העתק את קבצי התלות של Node.js והתקן אותם
+# Copy Node.js dependencies and install them
 COPY package*.json ./
 RUN npm install
 
-# העתק את שאר קבצי הפרויקט
+# Copy project files
 COPY . .
 
-# חשוף את הפורט שהשרת שלנו מאזין לו
+# Expose the port our server listens on
 EXPOSE 3000
 
-# הפקודה שתרוץ כשהקונטיינר יופעל
-CMD [ "node", "server.js" ]
+# Command to run when container starts
+CMD ["node", "server.js"]

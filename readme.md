@@ -1,143 +1,268 @@
-﻿**Project Documentation: SNOBOL4 Web Service Wrapper**
+# SNOBOL4 Web Service Wrapper
 
-**1. Objective**
+**Making the classic SNOBOL4 programming language accessible through modern web browsers**
 
-The primary goal of this project was to make the legacy, command-line SNOBOL4 programming language accessible to modern web applications. The original SNOBOL4 tool runs as a standalone, compiled executable that accepts a source file and prints output to the standard console.
+## Overview
 
-This project encapsulates that command-line tool within a Node.js web server, exposing its functionality through a simple REST API. This allows any JavaScript-based client (or any other application capable of making HTTP requests) to execute SNOBOL4 code and receive the results without needing the SNOBOL4 compiler or runtime installed locally.
+This project creates a web-based interface for the SNOBOL4 programming language (circa 1962). Instead of requiring users to install SNOBOL4 locally, this service provides a REST API and web interface that allows anyone to execute SNOBOL4 code through their browser.
 
-**2. Architecture & Implementation**
+## Live Demo
 
-The system is designed with a classic three-component architecture: a frontend client, a backend server (the wrapper), and the core SNOBOL4 engine.
+🚀 **Try it online:** [https://snobolserver.onrender.com](https://snobolserver.onrender.com)
 
-**Data Flow:** [Browser Client] --(HTTP Request)--> [Node.js Server] --(Spawns Process)--> [SNOBOL4 Executable] [Browser Client] <-- (HTTP Response) -- [Node.js Server] <-- (Captures stdout/stderr)-- [SNOBOL4 Executable]
+## Architecture
 
-**Components:**
+The system consists of three main components:
 
-- **SNOBOL4 Executable (snobol4):** This is the pre-compiled Linux binary that we created. It is the core engine that executes SNOBOL4 code. The server treats it as a black box, simply running it as a command-line tool.
-- **Backend Server (server.js):** This is the heart of the "wrapper". It's a lightweight server built using Node.js and the Express framework. Its responsibilities are:
-  - **Listen for API Calls:** It exposes an HTTP endpoint (POST /run-snobol) that waits for incoming requests.
-  - **Handle Requests:** When a request containing SNOBOL4 code arrives, the server writes this code to a temporary local file (e.g., temp\_12345.snb).
-  - **Process Management:** It uses Node.js's built-in child\_process.spawn() method to execute the snobol4 binary, passing the path to the temporary source file as an argument.
-  - **Capture Output:** It captures all data from the child process's standard output (stdout) and standard error (stderr).
-  - **Send Response:** Once the snobol4 process finishes, the server packages the captured output and error streams into a JSON object and sends it back to the client as an HTTP response.
-  - **Cleanup:** It deletes the temporary source file.
-- **Frontend Client (index.html):** A simple HTML page that provides a user interface. It contains a <textarea> for users to write SNOBOL4 code and a <button>. The embedded client-side JavaScript uses the fetch API to send the contents of the textarea to the backend's /run-snobol endpoint and then displays the returned output or error on the page.
+```
+[Web Browser] ←→ [Node.js Server] ←→ [SNOBOL4 Engine]
+```
 
-**3. API Usage Guide: How to Use from JavaScript**
+- **Frontend (index.html)**: Simple web interface with textarea for code input
+- **Backend (server.js)**: Express.js server that handles API requests  
+- **SNOBOL4 Engine**: Compiled SNOBOL4 interpreter from source code
 
-To execute SNOBOL4 code, send an HTTP POST request to the server's primary endpoint.
+## Data Flow
 
-**Endpoint:** POST /run-snobol
+1. User writes SNOBOL4 code in web interface
+2. JavaScript sends code via HTTP POST to `/run-snobol` endpoint
+3. Server writes code to temporary file
+4. Server spawns SNOBOL4 process to execute the file
+5. Server captures output/errors and returns JSON response
+6. Web interface displays results
+
+## Installation & Setup
+
+### Option 1: Run Locally
+
+**Prerequisites:**
+- Node.js 18+ and npm
+- Linux/Unix environment (for SNOBOL4 compilation)
+
+**Steps:**
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/snobol-server.git
+cd snobol-server
+
+# Install dependencies
+npm install
+
+# Compile SNOBOL4 (Linux/Unix only)
+wget https://ftp.regressive.org/snobol4/snobol4-2.3.3.tar.gz
+tar -xvf snobol4-2.3.3.tar.gz
+cd snobol4-2.3.3
+./configure && make
+sudo cp snobol4 /usr/local/bin/snobol4
+cd .. && rm -rf snobol4-2.3.3*
+
+# Update server.js to point to system binary
+# Change: const snobolExecutable = path.join(__dirname, 'snobol4');
+# To: const snobolExecutable = '/usr/local/bin/snobol4';
+
+# Start the server
+node server.js
+```
+
+Access at: `http://localhost:3000`
+
+### Option 2: Docker (Recommended)
+
+**Prerequisites:**
+- Docker installed
+
+**Steps:**
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/snobol-server.git
+cd snobol-server
+
+# Build Docker image
+docker build -t snobol4-server .
+
+# Run container
+docker run -p 3000:3000 snobol4-server
+```
+
+Access at: `http://localhost:3000`
+
+### Option 3: Deploy to Render (Cloud)
+
+**Prerequisites:**
+- GitHub account
+- Render account (free tier available)
+
+**Steps:**
+
+1. **Prepare your repository:**
+   ```bash
+   # Make sure your Dockerfile is in the root directory
+   # Update server.js to use: const snobolExecutable = '/usr/local/bin/snobol4';
+   
+   git add .
+   git commit -m "Prepare for Render deployment"
+   git push origin main
+   ```
+
+2. **Deploy on Render:**
+   - Go to [render.com](https://render.com) and sign up/login
+   - Click "New +" → "Web Service"
+   - Connect your GitHub repository
+   - Render will automatically detect the Dockerfile
+   - Choose "Docker" as the environment
+   - Set Build Command: `docker build`
+   - Set Start Command: `docker run`
+   - Click "Deploy"
+
+3. **Access your service:**
+   - Render provides a URL like: `https://yourapp.onrender.com`
+   - First deployment takes 5-10 minutes (SNOBOL4 compilation)
+   - Subsequent deployments are faster
+
+**Note for Render Free Tier:** Service may spin down after 15 minutes of inactivity, causing a 50+ second delay on first request.
+
+## API Reference
+
+### Execute SNOBOL4 Code
+
+**Endpoint:** `POST /run-snobol`
 
 **Headers:**
+```
+Content-Type: application/json
+```
 
-- Content-Type: application/json
-
-**Request Body:** The body must be a JSON object with a single key, code, which contains the SNOBOL4 source code as a string.
-
-*Example JavaScript fetch request:*
-
-JavaScript
-
-async function executeSnobol(snobolCode) {
-
-`    `const endpoint = 'http://localhost:3000/run-snobol'; // Or your deployed server URL
-
-`    `try {
-
-`        `const response = await fetch(endpoint, {
-
-`            `method: 'POST',
-
-`            `headers: {
-
-`                `'Content-Type': 'application/json'
-
-`            `},
-
-`            `body: JSON.stringify({ code: snobolCode })
-
-`        `});
-
-`        `if (!response.ok) {
-
-`            `throw new Error(`HTTP error! status: ${response.status}`);
-
-`        `}
-
-`        `const result = await response.json();
-
-`        `return result;
-
-`    `} catch (error) {
-
-`        `console.error("Failed to execute SNOBOL code:", error);
-
-`        `return { error: "Failed to connect to the server." };
-
-`    `}
-
-}
-
-// --- Usage Example ---
-
-const myCode = "    OUTPUT = 'This is a test from JS!' \nEND";
-
-executeSnobol(myCode).then(result => {
-
-`    `console.log("SNOBOL4 Output:", result.output);
-
-`    `if (result.error) {
-
-`        `console.error("SNOBOL4 Error:", result.error);
-
-`    `}
-
-`    `console.log("Exit Code:", result.exitCode);
-
-});
-
-**Success Response (200 OK):** The server will respond with a JSON object containing the results of the execution.
-
-*Example success response:*
-
-JSON
-
+**Request Body:**
+```json
 {
+  "code": "    OUTPUT = 'Hello World!'\nEND"
+}
+```
 
-`  `"output": "This is a test from JS!\n",
+**Response (Success):**
+```json
+{
+  "output": "Hello World!\n",
+  "error": "",
+  "exitCode": 0
+}
+```
 
-`  `"error": "",
+**Response (Error):**
+```json
+{
+  "output": "",
+  "error": "SNOBOL4 syntax error details...",
+  "exitCode": 1
+}
+```
 
-`  `"exitCode": 0
+### JavaScript Example
 
+```javascript
+async function runSnobol(code) {
+    const response = await fetch('/run-snobol', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code })
+    });
+    
+    const result = await response.json();
+    console.log('Output:', result.output);
+    if (result.error) console.error('Error:', result.error);
+    return result;
 }
 
-- output: (string) The captured standard output from the SNOBOL4 program.
-- error: (string) The captured standard error. Will be empty on successful execution.
-- exitCode: (number) The exit code of the SNOBOL4 process. 0 typically indicates success.
+// Usage
+runSnobol(`
+    TEXT = "Hello SNOBOL4!"
+    OUTPUT = TEXT
+END`);
+```
 
-**4. Project Setup and Running Locally**
+## SNOBOL4 Programming Tips
 
-1. **Prerequisites:** Node.js, npm.
-1. **File Structure:** Ensure the project directory contains: 
-   1. snobol4 (the Linux executable)
-   1. server.js
-   1. index.html
-   1. package.json
-1. **Installation:** From the project directory, run npm install to install Express.
-1. **Run Server:** Execute node server.js.
-1. **Access:** Open a web browser and navigate to http://localhost:3000.
+SNOBOL4 has specific syntax requirements:
 
-**5. Deployment Notes (Render)**
+1. **Always end with `END`:**
+   ```snobol
+   OUTPUT = "Hello World!"
+   END
+   ```
 
-To deploy this project to a service like Render:
+2. **Use proper indentation (spaces or tabs):**
+   ```snobol
+       TEXT = "The cat sat on the mat"
+       TEXT = REPLACE(TEXT,"cat","dog")
+       OUTPUT = TEXT
+   END
+   ```
 
-1. Push the entire project to a GitHub repository.
-1. **Crucially**, ensure the snobol4 file has execute permissions within the Git index by running git update-index --chmod=+x snobol4 before committing.
-1. Connect your GitHub repository to Render as a new "Web Service".
-1. Render will automatically detect the package.json file. Set the following commands: 
-   1. **Build Command:** npm install
-   1. **Start Command:** node server.js
+3. **Pattern matching example:**
+   ```snobol
+       TEXT = "SNOBOL4 is fun"
+       TEXT "SNOBOL4" = "Programming"
+       OUTPUT = TEXT
+   END
+   ```
 
+## File Structure
+
+```
+snobol-server/
+├── Dockerfile              # Docker container configuration
+├── package.json            # Node.js dependencies
+├── server.js              # Express.js web server
+├── index.html            # Web interface
+└── README.md             # This file
+```
+
+## Technical Notes
+
+- **SNOBOL4 Compilation**: The Dockerfile compiles SNOBOL4 from source to ensure compatibility with the container environment
+- **Security**: Each execution creates a temporary file, runs in isolated process, and cleans up automatically
+- **Error Handling**: Captures both stdout and stderr from SNOBOL4 process
+- **File Cleanup**: Temporary files are automatically deleted after execution
+
+## Troubleshooting
+
+**"GLIBC version not found" error:**
+- This happens when using a pre-compiled binary on a different system
+- Solution: Use the Docker approach which compiles SNOBOL4 in the target environment
+
+**"Command not found" error:**
+- Check that `snobolExecutable` path in server.js points to the correct location
+- For local install: `/usr/local/bin/snobol4`
+- For Docker: `/usr/local/bin/snobol4`
+
+**SNOBOL4 syntax errors:**
+- Remember to end programs with `END`
+- Use proper indentation
+- Check SNOBOL4 documentation for language syntax
+
+## Contributing
+
+This project is designed for SNOBOL4 enthusiasts who want to share the language with others. Contributions welcome:
+
+- Bug fixes and improvements
+- Better error handling
+- Additional SNOBOL4 examples
+- Documentation improvements
+
+## License
+
+This project is open source. The SNOBOL4 interpreter is distributed under its original license terms.
+
+## About SNOBOL4
+
+SNOBOL4 (String Oriented and Symbolic Language) was developed at Bell Labs in 1962. It excels at:
+- String manipulation and pattern matching
+- Text processing and parsing
+- Symbolic computation
+- Teaching programming language concepts
+
+Despite its age, SNOBOL4 remains relevant for understanding pattern matching concepts that influence modern languages.
+
+---
+
+*Made with ❤️ for the SNOBOL4 community*
