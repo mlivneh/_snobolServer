@@ -13,10 +13,9 @@ RUN wget https://ftp.regressive.org/snobol4/snobol4-2.3.3.tar.gz && \
     cd snobol4-2.3.3 && \
     ./configure && \
     make && \
-    cp src/snobol4 /usr/local/bin/snobol4
+    cp snobol4 /usr/local/bin/snobol4
 
 # העתק את קבצי התלות של Node.js והתקן אותם
-# זה נעשה בנפרד כדי לנצל את מנגנון ה-cache של דוקר
 COPY package*.json ./
 RUN npm install
 
